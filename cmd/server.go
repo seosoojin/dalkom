@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"errors"
 	"log"
 	"os"
 	"os/signal"
@@ -8,8 +9,11 @@ import (
 
 	"github.com/joho/godotenv"
 	"github.com/nextlevellabs/go-wise/wise"
+	"github.com/seosoojin/dalkom/internal/domain/auth"
 	"github.com/seosoojin/dalkom/internal/domain/binders"
 	"github.com/seosoojin/dalkom/internal/domain/cards"
+	"github.com/seosoojin/dalkom/internal/domain/users"
+	"github.com/seosoojin/dalkom/internal/gateways/middlewares"
 	"github.com/seosoojin/dalkom/internal/gateways/web"
 	"github.com/seosoojin/dalkom/pkg/models"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -28,6 +32,13 @@ var serverCmd = &cobra.Command{
 				return err
 			}
 		}
+
+		jwtSecret := os.Getenv("JWT_SECRET")
+		if jwtSecret == "" {
+			return errors.New("JWT_SECRET is required")
+		}
+
+		jwtService := auth.NewJWTService([]byte(jwtSecret))
 
 		mongoURI := os.Getenv("MONGO_URI")
 
@@ -48,9 +59,16 @@ var serverCmd = &cobra.Command{
 			return err
 		}
 
+		usersRepo, err := wise.NewMongoSimpleRepository[models.User](db.Collection("users"))
+		if err != nil {
+			return err
+		}
+
+		authMiddleware := middlewares.NewAuthenticator(jwtService)
 		server := web.NewServer("3000",
 			binders.NewHandler(binders.NewService(bindersRepo)),
 			cards.NewHandler(cards.NewService(cardsRepo)),
+			users.NewHandler(users.NewService(usersRepo, jwtService), authMiddleware),
 		)
 
 		go server.Run()

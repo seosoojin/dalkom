@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/google/uuid"
+	"github.com/nextlevellabs/go-wise/wise"
 	"github.com/seosoojin/dalkom/internal/domain/pagination"
 	"github.com/seosoojin/dalkom/pkg/models"
 )
@@ -41,7 +42,7 @@ func (s *service) GetByUserID(ctx context.Context, userID string, pagination pag
 		"user_id": {userID},
 	}
 
-	return s.repo.Search(ctx, filter)
+	return s.repo.Search(ctx, filter, wise.WithPage(pagination.Offset), wise.WithPageSize(pagination.Limit))
 }
 
 func (s *service) GetByID(ctx context.Context, id string) (models.Binder, error) {
@@ -49,6 +50,10 @@ func (s *service) GetByID(ctx context.Context, id string) (models.Binder, error)
 }
 
 func (s *service) Update(ctx context.Context, binder *models.Binder) error {
+	_, err := s.GetByID(ctx, binder.ID)
+	if err != nil {
+		return err
+	}
 	return s.repo.Upsert(ctx, binder.ID, *binder)
 }
 

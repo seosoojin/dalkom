@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/google/uuid"
+	"github.com/nextlevellabs/go-wise/wise"
 	"github.com/seosoojin/dalkom/internal/domain/pagination"
 	"github.com/seosoojin/dalkom/pkg/models"
 )
@@ -36,7 +37,7 @@ func (s *service) GetCard(ctx context.Context, id string) (models.Card, error) {
 }
 
 func (s *service) GetCards(ctx context.Context, pagination pagination.Page) ([]models.Card, error) {
-	return s.repo.Search(ctx, nil)
+	return s.repo.Search(ctx, nil, wise.WithPage(pagination.Offset), wise.WithPageSize(pagination.Limit))
 }
 
 func (s *service) CreateCard(ctx context.Context, card *models.Card) error {
