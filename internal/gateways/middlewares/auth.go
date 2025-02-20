@@ -2,6 +2,7 @@ package middlewares
 
 import (
 	"context"
+	"log"
 	"net/http"
 	"strings"
 
@@ -29,25 +30,29 @@ func (a *authenticator) Authenticate() func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			bearer := r.Header.Get("Authorization")
 			if bearer == "" {
+				log.Println("invalid token")
 				http.Error(w, "unauthorized", http.StatusForbidden)
 				return
 			}
 
 			if !strings.HasPrefix(bearer, "Bearer ") {
+				log.Println("invalid token")
 				http.Error(w, "unauthorized", http.StatusForbidden)
 				return
 			}
 
-			token := strings.TrimPrefix("Bearer ", bearer)
+			token := strings.TrimPrefix(bearer, "Bearer ")
 
-			_, err := a.JWTService.VerifyToken(token)
+			jwt, err := a.JWTService.VerifyToken(token)
 			if err != nil {
+				log.Println(err)
 				http.Error(w, "unauthorized", http.StatusForbidden)
 				return
 			}
 
-			ctx := context.WithValue(r.Context(), auth.CTXJWTKEY, token)
-			next.ServeHTTP(w, r.WithContext(ctx))
+			ctx := context.WithValue(r.Context(), auth.CTXJWTKEY, jwt.Claims)
+			r = r.WithContext(ctx)
+			next.ServeHTTP(w, r)
 		})
 	}
 }

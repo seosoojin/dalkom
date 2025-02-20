@@ -3,10 +3,12 @@ package users
 import (
 	"encoding/json"
 	"io"
+	"log"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/render"
+	"github.com/seosoojin/dalkom/internal/domain/auth"
 	"github.com/seosoojin/dalkom/internal/domain/handlers"
 	"github.com/seosoojin/dalkom/internal/gateways/middlewares"
 	"github.com/seosoojin/dalkom/pkg/models"
@@ -14,8 +16,8 @@ import (
 
 type Handler interface {
 	Login(w http.ResponseWriter, r *http.Request)
+	RefreshToken(w http.ResponseWriter, r *http.Request)
 	Register(w http.ResponseWriter, r *http.Request)
-	GetByID(w http.ResponseWriter, r *http.Request)
 	Update(w http.ResponseWriter, r *http.Request)
 	handlers.Http
 }
@@ -44,8 +46,8 @@ func (h *handler) RegisterRoutes(r *chi.Mux) {
 
 	r.Group(func(r chi.Router) {
 		r.Use(h.authMiddleware.Authenticate())
-		r.Get("/{id}", h.GetByID)
-		r.Put("/{id}", h.Update)
+		r.Get("/me", h.Me)
+		r.Put("/users/{id}", h.Update)
 	})
 
 }
@@ -65,13 +67,24 @@ func (h *handler) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	token, err := h.service.Login(r.Context(), user.Username, user.Password)
+	token, err := h.service.Login(r.Context(), user.Email, user.Password)
 	if err != nil {
+		log.Println(err, user)
 		http.Error(w, err.Error(), http.StatusUnauthorized)
 		return
 	}
 
 	render.JSON(w, r, LoginResponse{Token: token})
+}
+
+func (h *handler) RefreshToken(w http.ResponseWriter, r *http.Request) {
+	newToken, err := h.service.RefreshToken(r.Context())
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusUnauthorized)
+		return
+	}
+
+	render.JSON(w, r, LoginResponse{Token: newToken})
 }
 
 func (h *handler) Register(w http.ResponseWriter, r *http.Request) {
@@ -98,10 +111,12 @@ func (h *handler) Register(w http.ResponseWriter, r *http.Request) {
 	render.JSON(w, r, user)
 }
 
-func (h *handler) GetByID(w http.ResponseWriter, r *http.Request) {
-	id := chi.URLParam(r, "id")
+func (h *handler) Me(w http.ResponseWriter, r *http.Request) {
+	tknUser := auth.UserFromContext(r.Context())
 
-	user, err := h.service.GetByID(r.Context(), id)
+	log.Println(tknUser)
+
+	user, err := h.service.GetByID(r.Context(), tknUser.ID)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

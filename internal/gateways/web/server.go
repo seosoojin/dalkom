@@ -7,7 +7,6 @@ import (
 
 	"github.com/go-chi/chi/middleware"
 	"github.com/go-chi/chi/v5"
-	"github.com/go-chi/render"
 	"github.com/seosoojin/dalkom/internal/domain/handlers"
 )
 
@@ -31,7 +30,6 @@ func NewServer(port string, handlers ...handlers.Http) *Server {
 		middleware.Logger,
 		middleware.URLFormat,
 		middleware.GetHead,
-		render.SetContentType(render.ContentTypeJSON),
 		middleware.Heartbeat("/health"),
 	)
 

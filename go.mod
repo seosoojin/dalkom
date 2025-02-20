@@ -9,7 +9,7 @@ require (
 	github.com/golang-jwt/jwt/v5 v5.2.1
 	github.com/google/uuid v1.6.0
 	github.com/joho/godotenv v1.5.1
-	github.com/nextlevellabs/go-wise v0.0.0-20250117231131-bc01f902897b
+	github.com/nextlevellabs/go-wise v0.0.0-20250216175320-dcabc21c0f4d
 	github.com/spf13/cobra v1.8.1
 	go.mongodb.org/mongo-driver v1.17.2
 	golang.org/x/crypto v0.32.0

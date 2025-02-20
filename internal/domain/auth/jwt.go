@@ -1,10 +1,12 @@
 package auth
 
 import (
+	"context"
 	"fmt"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/seosoojin/dalkom/pkg/models"
 )
 
 type CtxKey string
@@ -34,7 +36,7 @@ func (s *jwtService) GenerateToken(claims any) (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"data": claims,
 		"iss":  "dalkom",
-		"exp":  time.Now().Add(time.Hour).Unix(),
+		"exp":  time.Now().Add(time.Hour * 24 * 7).Unix(),
 		"iat":  time.Now().Unix(),
 	})
 
@@ -58,4 +60,31 @@ func (s *jwtService) VerifyToken(tokenString string) (*jwt.Token, error) {
 	}
 
 	return token, nil
+}
+
+func UserFromContext(ctx context.Context) *models.User {
+	if ctx == nil {
+		return nil
+	}
+
+	claims := ctx.Value(CTXJWTKEY)
+	if claims == nil {
+		return nil
+	}
+
+	claimsMap, ok := claims.(jwt.MapClaims)
+	if !ok {
+		return nil
+	}
+
+	userMap, ok := claimsMap["data"].(map[string]any)
+	if !ok {
+		return nil
+	}
+
+	return &models.User{
+		ID:       userMap["id"].(string),
+		Email:    userMap["email"].(string),
+		Password: userMap["password"].(string),
+	}
 }

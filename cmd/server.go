@@ -12,6 +12,9 @@ import (
 	"github.com/seosoojin/dalkom/internal/domain/auth"
 	"github.com/seosoojin/dalkom/internal/domain/binders"
 	"github.com/seosoojin/dalkom/internal/domain/cards"
+	"github.com/seosoojin/dalkom/internal/domain/collections"
+	"github.com/seosoojin/dalkom/internal/domain/groups"
+	"github.com/seosoojin/dalkom/internal/domain/idols"
 	"github.com/seosoojin/dalkom/internal/domain/users"
 	"github.com/seosoojin/dalkom/internal/gateways/middlewares"
 	"github.com/seosoojin/dalkom/internal/gateways/web"
@@ -64,10 +67,28 @@ var serverCmd = &cobra.Command{
 			return err
 		}
 
+		idolRepo, err := wise.NewMongoSimpleRepository[models.Idol](db.Collection("idols"))
+		if err != nil {
+			return err
+		}
+
+		groupRepo, err := wise.NewMongoSimpleRepository[models.Group](db.Collection("groups"))
+		if err != nil {
+			return err
+		}
+
+		collectionRepo, err := wise.NewMongoSimpleRepository[models.Collection](db.Collection("collections"))
+		if err != nil {
+			return err
+		}
+
 		authMiddleware := middlewares.NewAuthenticator(jwtService)
 		server := web.NewServer("3000",
-			binders.NewHandler(binders.NewService(bindersRepo)),
-			cards.NewHandler(cards.NewService(cardsRepo)),
+			binders.NewHandler(binders.NewService(bindersRepo, cardsRepo), authMiddleware),
+			cards.NewHandler(cards.NewService(cardsRepo, groupRepo, idolRepo, collectionRepo)),
+			groups.NewHandler(groups.NewService(groupRepo)),
+			idols.NewHandler(idols.NewService(idolRepo)),
+			collections.NewHandler(collections.NewService(collectionRepo)),
 			users.NewHandler(users.NewService(usersRepo, jwtService), authMiddleware),
 		)
 
@@ -80,7 +101,7 @@ var serverCmd = &cobra.Command{
 
 		log.Println("Gracefully shutting down...")
 
-		return nil
+		return db.Client().Disconnect(cmd.Context())
 	},
 }
 
