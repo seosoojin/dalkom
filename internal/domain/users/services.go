@@ -36,6 +36,8 @@ func NewService(repo Repository, jwtSvc auth.JWTService) *service {
 }
 
 func (s *service) Login(ctx context.Context, user, password string) (string, error) {
+	user = strings.ToLower(user)
+
 	filter := map[string][]any{
 		"email": {user},
 	}

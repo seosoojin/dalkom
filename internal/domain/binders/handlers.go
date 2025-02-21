@@ -2,6 +2,7 @@ package binders
 
 import (
 	"encoding/json"
+	"io"
 	"net/http"
 	"strconv"
 
@@ -119,7 +120,13 @@ func (h *handler) GetBinderCards(w http.ResponseWriter, r *http.Request) {
 func (h *handler) Create(w http.ResponseWriter, r *http.Request) {
 	binder := new(models.Binder)
 
-	err := json.NewDecoder(r.Body).Decode(binder)
+	b, err := io.ReadAll(r.Body)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	err = json.Unmarshal(b, binder)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return

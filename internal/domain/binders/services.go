@@ -73,7 +73,11 @@ func (s *service) AddCard(ctx context.Context, binderID, cardID string) error {
 		return err
 	}
 
-	binder.CardIDs = append(binder.CardIDs, cardID)
+	if binder.CardIDs == nil {
+		binder.CardIDs = &[]string{}
+	}
+
+	*binder.CardIDs = append(*binder.CardIDs, cardID)
 
 	return s.repo.Upsert(ctx, binder.ID, binder)
 }
@@ -84,9 +88,13 @@ func (s *service) RemoveCard(ctx context.Context, binderID, cardID string) error
 		return err
 	}
 
-	for i, id := range binder.CardIDs {
+	if binder.CardIDs == nil {
+		binder.CardIDs = &[]string{}
+	}
+
+	for i, id := range *binder.CardIDs {
 		if id == cardID {
-			binder.CardIDs = append(binder.CardIDs[:i], binder.CardIDs[i+1:]...)
+			*binder.CardIDs = append((*binder.CardIDs)[:i], (*binder.CardIDs)[i+1:]...)
 			break
 		}
 	}
@@ -100,7 +108,7 @@ func (s *service) GetBinderCards(ctx context.Context, id string) ([]models.Card,
 		return nil, err
 	}
 
-	cards, err := s.cardRepo.Find(ctx, binder.CardIDs)
+	cards, err := s.cardRepo.Find(ctx, *binder.CardIDs)
 	if err != nil {
 		return nil, err
 	}
@@ -110,8 +118,8 @@ func (s *service) GetBinderCards(ctx context.Context, id string) ([]models.Card,
 		cardsResultMap[card.ID] = card
 	}
 
-	result := make([]models.Card, 0, len(binder.CardIDs))
-	for _, id := range binder.CardIDs {
+	result := make([]models.Card, 0, len(*binder.CardIDs))
+	for _, id := range *binder.CardIDs {
 		result = append(result, cardsResultMap[id])
 	}
 

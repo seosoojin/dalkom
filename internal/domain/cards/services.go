@@ -2,7 +2,6 @@ package cards
 
 import (
 	"context"
-	"log"
 
 	"github.com/google/uuid"
 	"github.com/nextlevellabs/go-wise/wise"
@@ -54,25 +53,21 @@ func (s *service) GetCard(ctx context.Context, id string) (models.Card, error) {
 func (s *service) GetEnrichedCard(ctx context.Context, id string) (models.EnrichedCard, error) {
 	card, err := s.GetCard(ctx, id)
 	if err != nil {
-		log.Println(err)
 		return models.EnrichedCard{}, err
 	}
 
 	group, err := s.groupRepo.FindOne(ctx, card.GroupID)
 	if err != nil {
-		log.Println("Group", err)
 		return models.EnrichedCard{}, err
 	}
 
 	idols, err := s.idolRepo.Find(ctx, card.IdolIDs)
 	if err != nil {
-		log.Println("Idols", err)
 		return models.EnrichedCard{}, err
 	}
 
 	collection, err := s.collectionRepo.FindOne(ctx, card.CollectionID)
 	if err != nil {
-		log.Println("Collection", err)
 		return models.EnrichedCard{}, err
 	}
 

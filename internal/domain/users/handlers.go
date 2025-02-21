@@ -3,7 +3,6 @@ package users
 import (
 	"encoding/json"
 	"io"
-	"log"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
@@ -69,7 +68,6 @@ func (h *handler) Login(w http.ResponseWriter, r *http.Request) {
 
 	token, err := h.service.Login(r.Context(), user.Email, user.Password)
 	if err != nil {
-		log.Println(err, user)
 		http.Error(w, err.Error(), http.StatusUnauthorized)
 		return
 	}
@@ -113,8 +111,6 @@ func (h *handler) Register(w http.ResponseWriter, r *http.Request) {
 
 func (h *handler) Me(w http.ResponseWriter, r *http.Request) {
 	tknUser := auth.UserFromContext(r.Context())
-
-	log.Println(tknUser)
 
 	user, err := h.service.GetByID(r.Context(), tknUser.ID)
 	if err != nil {
